@@ -337,7 +337,7 @@ public class ConnectedActivity extends AppCompatActivity {
                     //String converted = new String(mmBuffer) + "\0";
                     String converted = new String(mmBuffer);
                     Log.i(CONNECT_TAG, "msg converted: "+converted);
-                    Message msg2 = handlerUIThread.obtainMessage(1, 2, 1, (Object)converted);
+                    Message msg2 = handlerUIThread.obtainMessage(Constants.MESSAGE_READ, 2, 1, (Object)converted);
                     msg2.sendToTarget();
 
                 } catch (IOException e) {
