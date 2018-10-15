@@ -1,5 +1,4 @@
-## Android bluethoot Server Client communication 
-# bluetoothServerClient
+# Android bluethoot Server Client communication 
 
 @Autor_note:
 This code was made due to incomplete snippets of codes. As a junior programmer I didn´t understand everything at first 
