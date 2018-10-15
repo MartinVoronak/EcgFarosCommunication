@@ -235,6 +235,7 @@ public class ConnectedActivity extends AppCompatActivity {
         }
 
         public void run() {
+            Log.i(CONNECT_TAG, "Client thread run() called");
             // Cancel discovery because it otherwise slows down the connection.
             mBluetoothAdapter.cancelDiscovery();
 
@@ -248,7 +249,7 @@ public class ConnectedActivity extends AppCompatActivity {
                 try {
                     mmSocket.close();
                 } catch (IOException closeException) {
-                    Log.e(TAG, "Could not close the client socket", closeException);
+                    Log.i(TAG, "Could not close the client socket", closeException);
                 }
                 return;
             }
@@ -257,6 +258,7 @@ public class ConnectedActivity extends AppCompatActivity {
             // the connection in a separate thread.
             //todo handle somehow
             myClientChannel = connectedCommunication(mmSocket);
+
         }
 
         // Closes the client socket and causes the thread to finish.
@@ -277,6 +279,7 @@ public class ConnectedActivity extends AppCompatActivity {
 
     // If one succeeds with the socket connection, now time to manage connection for sending and receiving files in a separate thread.
     public synchronized ConnectedThread connectedCommunication(BluetoothSocket socket) {
+        Log.i(CONNECT_TAG, "Establishing connection in new thread");
 
         // Start the thread to manage the connection and perform transmissions
         ConnectedThread mConnectedThread = new ConnectedThread(socket);
@@ -302,13 +305,14 @@ public class ConnectedActivity extends AppCompatActivity {
             // member streams are final.
             try {
                 tmpIn = socket.getInputStream();
+                Log.i(CONNECT_TAG, "socket accepted in Create thread");
             } catch (IOException e) {
                 Log.i(CONNECT_TAG, "Could not create input/output streams ",e);
             }
             try {
                 tmpOut = socket.getOutputStream();
             } catch (IOException e) {
-                Log.e(CONNECT_TAG, "Error occurred when creating output stream", e);
+                Log.i(CONNECT_TAG, "Error occurred when creating output stream", e);
             }
 
             mmInStream = tmpIn;
@@ -320,7 +324,7 @@ public class ConnectedActivity extends AppCompatActivity {
 
 
         public void run() {
-
+            Log.i(CONNECT_TAG, "Method run called");
 
             // Keep listening to the InputStream until an exception occurs.
             while (true) {
