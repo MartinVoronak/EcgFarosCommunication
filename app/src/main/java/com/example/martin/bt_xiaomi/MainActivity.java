@@ -54,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
                 IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
                 filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
                 filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+                filter.addAction(BluetoothDevice.ACTION_PAIRING_REQUEST);
 
                 //start receive bluetooth devices
                 registerReceiver(mReceiver, filter);
@@ -165,18 +166,37 @@ public class MainActivity extends AppCompatActivity {
                 discoverdBleDevices.add(device);
                 discoveredAdapter.notifyDataSetChanged();
             }
+//            else if (action.equals(BluetoothDevice.ACTION_PAIRING_REQUEST)) {
+//
+//            }
         }
     };
 
     private void pairDevice(BluetoothDevice device) {
-        try {
-            Method method = device.getClass().getMethod("createBond", (Class[]) null);
-            method.invoke(device, (Object[]) null);
-            showPaired();
 
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (device.getAddress().equals("EC:FE:7E:12:EE:51")){
+            String BLE_PIN = "3448";
+            device.setPin(BLE_PIN.getBytes());
+            Log.i(TAG, "Auto entering pin: "+BLE_PIN);
+            if (device.createBond()){
+                Log.i(TAG, "Bonding successful");
+            }
+            else {
+                Log.i(TAG, "Bonding NOT successfull");
+            }
+
+        }else{
+            try {
+                Method method = device.getClass().getMethod("createBond", (Class[]) null);
+                method.invoke(device, (Object[]) null);
+                showPaired();
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
+
+
     }
 
 

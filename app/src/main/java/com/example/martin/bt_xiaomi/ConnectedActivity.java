@@ -25,6 +25,7 @@ public class ConnectedActivity extends AppCompatActivity {
     //https://www.programcreek.com/java-api-examples/?code=hardik-dadhich/bluetooth-chat-appliction/bluetooth-chat-appliction-master/Application/src/main/java/com/example/android/bluetoothchat/BluetoothChatService.java#
     //https://developer.android.com/guide/topics/connectivity/bluetooth
 
+    //private static final UUID MY_UUID = UUID.fromString("8ce255c0-200a-11e0-ac64-0800200c9a66");
     private static final UUID MY_UUID = UUID.fromString("8ce255c0-200a-11e0-ac64-0800200c9a66");
     BluetoothAdapter mBluetoothAdapter;
     private static final String CONNECT_TAG = "BT_Connected";
@@ -237,7 +238,8 @@ public class ConnectedActivity extends AppCompatActivity {
         public void run() {
             Log.i(CONNECT_TAG, "Client thread run() called");
             // Cancel discovery because it otherwise slows down the connection.
-            mBluetoothAdapter.cancelDiscovery();
+        //    mBluetoothAdapter.cancelDiscovery();
+          //  Log.i(CONNECT_TAG, "IF discovery was running - closing");
 
             try {
                 // Connect to the remote device through the socket. This call blocks
@@ -248,6 +250,7 @@ public class ConnectedActivity extends AppCompatActivity {
                 // Unable to connect; close the socket and return.
                 try {
                     mmSocket.close();
+                    Log.i(CONNECT_TAG, "Client socket closed");
                 } catch (IOException closeException) {
                     Log.i(TAG, "Could not close the client socket", closeException);
                 }
