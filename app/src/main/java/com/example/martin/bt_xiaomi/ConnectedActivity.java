@@ -26,9 +26,13 @@ public class ConnectedActivity extends AppCompatActivity {
     //https://developer.android.com/guide/topics/connectivity/bluetooth
 
     //private static final UUID MY_UUID = UUID.fromString("8ce255c0-200a-11e0-ac64-0800200c9a66");
-    private static final UUID MY_UUID = UUID.fromString("8ce255c0-200a-11e0-ac64-0800200c9a66");
+    private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     BluetoothAdapter mBluetoothAdapter;
     private static final String CONNECT_TAG = "BT_Connected";
+
+    //todo send after connection ?
+    public static final String MSG_DRV_MGH_MESSAGE = "DRV_MGH_MESSAGE";
+    public static final String MSG_DRV_MGH_MESSAGE_CONNECTED = "connected";
 
     AcceptThread acceptThread;
     ConnectThread connectThread;
@@ -156,7 +160,7 @@ public class ConnectedActivity extends AppCompatActivity {
             BluetoothServerSocket tmp = null;
             try {
                 // MY_UUID is the app's UUID string, also used by the client code.
-                tmp = mBluetoothAdapter.listenUsingRfcommWithServiceRecord(NAME, MY_UUID);
+                tmp = mBluetoothAdapter.listenUsingInsecureRfcommWithServiceRecord("PWAccessP", MY_UUID);
                 Log.i(CONNECT_TAG, "Server initializing communication with paired device");
             } catch (IOException e) {
                 Log.e(TAG, "Socket's listen() method failed", e);
@@ -222,16 +226,31 @@ public class ConnectedActivity extends AppCompatActivity {
             // Use a temporary object that is later assigned to mmSocket
             // because mmSocket is final.
             BluetoothSocket tmp = null;
+            boolean failed = false;
             mmDevice = device;
 
             try {
                 // Get a BluetoothSocket to connect with the given BluetoothDevice.
                 // MY_UUID is the app's UUID string, also used in the server code.
                 tmp = device.createRfcommSocketToServiceRecord(MY_UUID);
-                Log.i(CONNECT_TAG, "Client Initializing communication with paired device");
+                Log.i(CONNECT_TAG, "Client createRfcommSocketToServiceRecord() with device");
             } catch (IOException e) {
-                Log.e(TAG, "Socket's create() method failed", e);
+                failed = true;
+                Log.e(TAG, "Socket's createRfcommSocketToServiceRecord() method failed", e);
             }
+
+            if (failed){
+                try {
+                    // Get a BluetoothSocket to connect with the given BluetoothDevice.
+                    // MY_UUID is the app's UUID string, also used in the server code.
+                    tmp = device.createInsecureRfcommSocketToServiceRecord(MY_UUID);
+                    Log.i(CONNECT_TAG, "Client createInsecureRfcommSocketToServiceRecord() with device");
+                } catch (IOException e) {
+                    failed = true;
+                    Log.e(TAG, "Socket's createInsecureRfcommSocketToServiceRecord() method failed", e);
+                }
+            }
+
             mmSocket = tmp;
         }
 
@@ -259,7 +278,7 @@ public class ConnectedActivity extends AppCompatActivity {
 
             // The connection attempt succeeded. Perform work associated with
             // the connection in a separate thread.
-            //todo handle somehow
+            //todo create better handler
             myClientChannel = connectedCommunication(mmSocket);
 
         }
@@ -303,6 +322,7 @@ public class ConnectedActivity extends AppCompatActivity {
             mmSocket = socket;
             InputStream tmpIn = null;
             OutputStream tmpOut = null;
+            //Message connMsg = Message.obtain();
 
             // Get the input and output streams; using temp objects because
             // member streams are final.
@@ -328,6 +348,14 @@ public class ConnectedActivity extends AppCompatActivity {
 
         public void run() {
             Log.i(CONNECT_TAG, "Method run called");
+
+            //todo try sending this after connection
+            /*
+            Message connMsg = Message.obtain();
+            Bundle data = new Bundle();
+            data.putString(MSG_DRV_MGH_MESSAGE, MSG_DRV_MGH_MESSAGE_CONNECTED);
+            connMsg.setData(data);
+            */
 
             // Keep listening to the InputStream until an exception occurs.
             while (true) {
