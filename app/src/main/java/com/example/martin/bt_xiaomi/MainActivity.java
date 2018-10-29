@@ -166,9 +166,6 @@ public class MainActivity extends AppCompatActivity {
                 discoverdBleDevices.add(device);
                 discoveredAdapter.notifyDataSetChanged();
             }
-//            else if (action.equals(BluetoothDevice.ACTION_PAIRING_REQUEST)) {
-//
-//            }
         }
     };
 

@@ -1,5 +1,6 @@
 package com.example.martin.bt_xiaomi;
 
+import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
@@ -20,6 +21,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 public class ConnectedActivity extends AppCompatActivity {
@@ -41,6 +44,9 @@ public class ConnectedActivity extends AppCompatActivity {
 
     Handler handlerUIThread;
 
+    EditText msg;
+    TextView runAs;
+
     @Override
     protected void onDestroy(){
         super.onDestroy();
@@ -61,6 +67,8 @@ public class ConnectedActivity extends AppCompatActivity {
         final BluetoothDevice connectedDev = (BluetoothDevice) getIntent().getParcelableExtra("paired_device");
         Log.i(CONNECT_TAG, "device selected: "+connectedDev.getName()+" "+connectedDev.getAddress());
 
+        runAs = (TextView) findViewById(R.id.runAs);
+
         handlerUIThread = new Handler(Looper.getMainLooper()) {
             @Override
             public void handleMessage(Message message) {
@@ -74,7 +82,23 @@ public class ConnectedActivity extends AppCompatActivity {
             }
         };
 
-//        //todo choose from server / client button to start
+        final EditText msgEdit = (EditText) findViewById(R.id.msgEdit);
+        Button btnSend = (Button) findViewById(R.id.btnSend);
+        btnSend.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                String msg = msgEdit.getText().toString();
+
+                if (acceptThread != null) {
+                    acceptThread.sendMessage(msg);
+                } else if (connectThread != null) {
+                    connectThread.sendMessage(msg);
+                } else {
+                    Toast.makeText(getApplicationContext(), "Thread not running!", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
+
         Button btnServer = (Button) findViewById(R.id.btnServer);
         btnServer.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -88,60 +112,31 @@ public class ConnectedActivity extends AppCompatActivity {
                 startClient(connectedDev);
             }
         });
-
-        Button btnMsgServer = (Button) findViewById(R.id.btnMsgServer);
-        btnMsgServer.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                if (acceptThread!=null)
-                    acceptThread.sendMessage("Hello from Server!");
-                else
-                    Toast.makeText(getApplicationContext(), "Server thread not running!", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        Button btnMsgClient = (Button) findViewById(R.id.btnMsgClient);
-        btnMsgClient.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                if(connectThread!=null)
-                    connectThread.sendMessage("Hello from Client!");
-                else
-                    Toast.makeText(getApplicationContext(), "Client thread not running!", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        Button btnServerCode = (Button) findViewById(R.id.btnServerCode);
-        btnServerCode.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                if(acceptThread!=null)
-                    acceptThread.sendMessage("secret message");
-                else
-                    Toast.makeText(getApplicationContext(), "Client thread not running!", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        Button btnClientCode = (Button) findViewById(R.id.btnClientCode);
-        btnClientCode.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                if(connectThread!=null)
-                    connectThread.sendMessage("secret message");
-                else
-                    Toast.makeText(getApplicationContext(), "Client thread not running!", Toast.LENGTH_SHORT).show();
-            }
-        });
-
     }
 
     //should be synchronized??
     public synchronized void startServer(){
         Log.i(CONNECT_TAG, "btnServer clicked");
+
+        if (connectThread!=null)
+            connectThread.cancel();
+
         acceptThread = new AcceptThread();
         acceptThread.run();
+
+        runAs.setText("Running as Server");
     }
 
     public synchronized void startClient(BluetoothDevice connectedDev){
         Log.i(CONNECT_TAG, "btnClient clicked");
+
+        if (acceptThread!=null)
+            acceptThread.cancel();
+
         connectThread = new ConnectThread(connectedDev);
         connectThread.run();
+
+        runAs.setText("Running as Client");
     }
 
 
@@ -171,6 +166,7 @@ public class ConnectedActivity extends AppCompatActivity {
         }
 
         public void run() {
+
             Log.i(CONNECT_TAG, "Starting run thread");
             BluetoothSocket socket = null;
             // Keep listening until exception occurs or a socket is returned.
@@ -187,7 +183,7 @@ public class ConnectedActivity extends AppCompatActivity {
 
                     // Situation normal. Start the connected thread.
                     myServerChannel = connectedCommunication(socket);
-
+                    myServerChannel.start();
                     try {
                         mmServerSocket.close();
                     } catch (IOException e) {
@@ -277,7 +273,7 @@ public class ConnectedActivity extends AppCompatActivity {
             Log.i(CONNECT_TAG, "Client thread run() called");
             // Cancel discovery because it otherwise slows down the connection.
             mBluetoothAdapter.cancelDiscovery();
-          //  Log.i(CONNECT_TAG, "IF discovery was running - closing");
+            //  Log.i(CONNECT_TAG, "IF discovery was running - closing");
 
             try {
                 // Connect to the remote device through the socket. This call blocks
@@ -357,7 +353,7 @@ public class ConnectedActivity extends AppCompatActivity {
             mmOutStream = tmpOut;
 
 
-        Log.i(CONNECT_TAG, "Channel created");
+            Log.i(CONNECT_TAG, "Channel created");
         }
 
 
