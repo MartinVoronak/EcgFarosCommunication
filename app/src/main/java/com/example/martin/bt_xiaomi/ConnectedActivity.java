@@ -11,6 +11,8 @@ import android.util.Log;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.UUID;
 
 import android.bluetooth.BluetoothDevice;
@@ -251,13 +253,30 @@ public class ConnectedActivity extends AppCompatActivity {
                 }
             }
 
+            if (failed){
+                Method m = null;
+                try {
+                    m = device.getClass().getMethod("createRfcommSocket", int.class);
+                    tmp = (BluetoothSocket) m.invoke(device, 1);
+                } catch (NoSuchMethodException e) {
+                    e.printStackTrace();
+                    Log.e(TAG, "Socket's github method failed", e);
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                    Log.e(TAG, "Socket's github method failed", e);
+                } catch (InvocationTargetException e) {
+                    e.printStackTrace();
+                    Log.e(TAG, "Socket's github method failed", e);
+                }
+            }
+
             mmSocket = tmp;
         }
 
         public void run() {
             Log.i(CONNECT_TAG, "Client thread run() called");
             // Cancel discovery because it otherwise slows down the connection.
-        //    mBluetoothAdapter.cancelDiscovery();
+            mBluetoothAdapter.cancelDiscovery();
           //  Log.i(CONNECT_TAG, "IF discovery was running - closing");
 
             try {
@@ -280,6 +299,8 @@ public class ConnectedActivity extends AppCompatActivity {
             // the connection in a separate thread.
             //todo create better handler
             myClientChannel = connectedCommunication(mmSocket);
+            myClientChannel.start();
+            Log.i(TAG, "Starting new communication thread");
 
         }
 
@@ -305,8 +326,6 @@ public class ConnectedActivity extends AppCompatActivity {
 
         // Start the thread to manage the connection and perform transmissions
         ConnectedThread mConnectedThread = new ConnectedThread(socket);
-        mConnectedThread.start();
-
         return  mConnectedThread;
     }
 
@@ -328,14 +347,10 @@ public class ConnectedActivity extends AppCompatActivity {
             // member streams are final.
             try {
                 tmpIn = socket.getInputStream();
+                tmpOut = socket.getOutputStream();
                 Log.i(CONNECT_TAG, "socket accepted in Create thread");
             } catch (IOException e) {
                 Log.i(CONNECT_TAG, "Could not create input/output streams ",e);
-            }
-            try {
-                tmpOut = socket.getOutputStream();
-            } catch (IOException e) {
-                Log.i(CONNECT_TAG, "Error occurred when creating output stream", e);
             }
 
             mmInStream = tmpIn;
