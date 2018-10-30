@@ -269,8 +269,8 @@ public class ConnectedActivity extends AppCompatActivity {
                 Log.e(CONNECT_TAG, "ConnectThread.run() cancelDiscovery " + btExc.getMessage());
             }
 
-            Message connMsg = Message.obtain();
-            Bundle data = new Bundle();
+//            Message connMsg = Message.obtain();
+//            Bundle data = new Bundle();
 
             try {
                 // Connect to the remote device through the socket. This call blocks
@@ -278,8 +278,8 @@ public class ConnectedActivity extends AppCompatActivity {
                 if (btAdapter.isEnabled()){
                     mmSocket.connect();
                     Log.i(CONNECT_TAG, "Client connected to socket");
-                    data.putString(DRV_WBA_MESSAGE, MSG_DRV_WBA_CONNECTED);
-                    connMsg.setData(data);
+//                    data.putString(DRV_WBA_MESSAGE, MSG_DRV_WBA_CONNECTED);
+//                    connMsg.setData(data);
                 }
                 else {
                     Log.i(CONNECT_TAG, "BT not enabled, socket wont connect, retrying or method failed");
