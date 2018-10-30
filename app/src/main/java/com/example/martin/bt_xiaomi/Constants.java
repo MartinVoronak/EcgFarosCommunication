@@ -1,5 +1,8 @@
 package com.example.martin.bt_xiaomi;
 
+/*
+todo: add methods for better handling of messages
+ */
 public interface Constants {
 
     // Message types sent from the BluetoothChatService Handler

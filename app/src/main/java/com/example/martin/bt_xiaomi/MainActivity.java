@@ -82,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
                 BluetoothDevice selected = (BluetoothDevice) parent.getItemAtPosition(position);
-                Intent intent = new Intent(getApplicationContext(), ConnectedActivity.class);
+                Intent intent = new Intent(getApplicationContext(), CommunicateActivity.class);
                 intent.putExtra("paired_device", selected);
                 startActivity(intent);
             }
