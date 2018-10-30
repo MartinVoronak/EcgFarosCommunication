@@ -36,8 +36,8 @@ public class ConnectedActivity extends AppCompatActivity {
     private static final String CONNECT_TAG = "BT_Connected";
 
     //todo send after connection ?
-    public static final String MSG_DRV_MGH_MESSAGE = "DRV_MGH_MESSAGE";
-    public static final String MSG_DRV_MGH_MESSAGE_CONNECTED = "connected";
+    public static final String MSG_DRV_WBA_CONNECTED = "coonected_to_wba";
+    public static final String DRV_WBA_MESSAGE = "DRV_WBA_MESSAGE";
 
     AcceptThread acceptThread;
     ConnectThread connectThread;
@@ -230,42 +230,26 @@ public class ConnectedActivity extends AppCompatActivity {
             try {
                 // Get a BluetoothSocket to connect with the given BluetoothDevice.
                 // MY_UUID is the app's UUID string, also used in the server code.
-                tmp = device.createRfcommSocketToServiceRecord(MY_UUID);
-                Log.i(CONNECT_TAG, "Client createRfcommSocketToServiceRecord() with device");
+                tmp = device.createInsecureRfcommSocketToServiceRecord(MY_UUID);
+                Log.i(CONNECT_TAG, "Client createInsecureRfcommSocketToServiceRecord() with device");
             } catch (IOException e) {
                 failed = true;
-                Log.e(TAG, "Socket's createRfcommSocketToServiceRecord() method failed", e);
+                Log.e(TAG, "Socket's createInsecureRfcommSocketToServiceRecord() method failed", e);
             }
 
             if (failed){
                 try {
                     // Get a BluetoothSocket to connect with the given BluetoothDevice.
                     // MY_UUID is the app's UUID string, also used in the server code.
-                    tmp = device.createInsecureRfcommSocketToServiceRecord(MY_UUID);
-                    Log.i(CONNECT_TAG, "Client createInsecureRfcommSocketToServiceRecord() with device");
+                    tmp = device.createRfcommSocketToServiceRecord(MY_UUID);
+                    Log.i(CONNECT_TAG, "Client createRfcommSocketToServiceRecord() with device");
                 } catch (IOException e) {
                     failed = true;
-                    Log.e(TAG, "Socket's createInsecureRfcommSocketToServiceRecord() method failed", e);
+                    Log.e(TAG, "Socket's createRfcommSocketToServiceRecord() method failed", e);
                 }
             }
 
-            if (failed){
-                Method m = null;
-                try {
-                    m = device.getClass().getMethod("createRfcommSocket", int.class);
-                    tmp = (BluetoothSocket) m.invoke(device, 1);
-                } catch (NoSuchMethodException e) {
-                    e.printStackTrace();
-                    Log.e(TAG, "Socket's github method failed", e);
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
-                    Log.e(TAG, "Socket's github method failed", e);
-                } catch (InvocationTargetException e) {
-                    e.printStackTrace();
-                    Log.e(TAG, "Socket's github method failed", e);
-                }
-            }
-
+            Log.i(CONNECT_TAG, "Socket created");
             mmSocket = tmp;
         }
 
@@ -275,11 +259,32 @@ public class ConnectedActivity extends AppCompatActivity {
             mBluetoothAdapter.cancelDiscovery();
             //  Log.i(CONNECT_TAG, "IF discovery was running - closing");
 
+            BluetoothAdapter btAdapter = null;
+            try{
+                btAdapter = BluetoothAdapter.getDefaultAdapter();
+                if (btAdapter.cancelDiscovery()) {
+                    Log.d(CONNECT_TAG, "ConnectThread.run() cancelDiscovery OK");
+                }
+            } catch (Exception btExc) {
+                Log.e(CONNECT_TAG, "ConnectThread.run() cancelDiscovery " + btExc.getMessage());
+            }
+
+//            Message connMsg = Message.obtain();
+//            Bundle data = new Bundle();
+
             try {
                 // Connect to the remote device through the socket. This call blocks
                 // until it succeeds or throws an exception.
-                mmSocket.connect();
-                Log.i(CONNECT_TAG, "Client connected to socket");
+                if (btAdapter.isEnabled()){
+                    mmSocket.connect();
+                    Log.i(CONNECT_TAG, "Client connected to socket");
+//                    data.putString(DRV_WBA_MESSAGE, MSG_DRV_WBA_CONNECTED);
+//                    connMsg.setData(data);
+                }
+                else {
+                    Log.i(CONNECT_TAG, "BT not enabled, socket wont connect, retrying or method failed");
+                    mBluetoothAdapter.enable();
+                }
             } catch (IOException connectException) {
                 // Unable to connect; close the socket and return.
                 try {
