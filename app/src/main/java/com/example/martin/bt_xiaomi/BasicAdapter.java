@@ -11,6 +11,12 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.List;
 
+/*
+This Adapter lets you show row as you specified by layer - R.layout.custom_row_devices
+inpput: ArrayList<BluetoothDevice> items
+output: every single row of list on screen
+
+ */
 public class BasicAdapter extends ArrayAdapter<BluetoothDevice>{
 
     ArrayList<BluetoothDevice> items = null;
