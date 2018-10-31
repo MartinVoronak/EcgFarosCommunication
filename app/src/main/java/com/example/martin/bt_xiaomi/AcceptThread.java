@@ -9,11 +9,12 @@ import android.util.Log;
 import java.io.IOException;
 import java.util.UUID;
 
+import static com.example.martin.bt_xiaomi.Constants.CONNECT_TAG;
+import static com.example.martin.bt_xiaomi.Constants.MY_UUID;
+
 //server
 public class AcceptThread extends Thread {
 
-    private static final String CONNECT_TAG = "BT_Connected";
-    private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private final BluetoothServerSocket mmServerSocket;
     private final String NAME = "myPrototype";
     private static final String TAG = "BT_Accept_thread";
@@ -41,7 +42,6 @@ public class AcceptThread extends Thread {
     }
 
     public void run() {
-
         Log.i(CONNECT_TAG, "Starting run thread");
         BluetoothSocket socket = null;
         // Keep listening until exception occurs or a socket is returned.
@@ -56,9 +56,8 @@ public class AcceptThread extends Thread {
 
             if (socket != null) {
 
-                // Situation normal. Start the connected thread.
-                myCommChanel = connectedCommunication(socket);
-                myCommChanel.start();
+                // create communication thread
+                myCommChanel = new CommunicationThread(socket, handlerUIThread);
                 try {
                     mmServerSocket.close();
                 } catch (IOException e) {
@@ -69,10 +68,6 @@ public class AcceptThread extends Thread {
         }
     }
 
-    public void sendMessage(String msg) {
-        myCommChanel.write(msg);
-    }
-
     // Closes the connect socket and causes the thread to finish.
     public void cancel() {
         try {
@@ -81,17 +76,9 @@ public class AcceptThread extends Thread {
         } catch (IOException e) {
             Log.e(TAG, "Could not close the connect socket", e);
         }
-
-        if (myCommChanel != null)
-            myCommChanel.close();
     }
 
-    // If one succeeds with the socket connection, now time to manage connection for sending and receiving files in a separate thread.
-    public synchronized CommunicationThread connectedCommunication(BluetoothSocket socket) {
-        Log.i(CONNECT_TAG, "Establishing connection in new thread");
-
-        // Start the thread to manage the connection and perform transmissions
-        CommunicationThread mCommunicationThread = new CommunicationThread(socket, handlerUIThread);
-        return mCommunicationThread;
+    public CommunicationThread getMyCommChanel(){
+        return myCommChanel;
     }
 }

@@ -7,13 +7,17 @@ import android.os.Handler;
 import android.util.Log;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.UUID;
+
+import static com.example.martin.bt_xiaomi.Constants.CONNECT_TAG;
+import static com.example.martin.bt_xiaomi.Constants.MY_UUID;
+import static com.example.martin.bt_xiaomi.Constants.WBA_COMMAND_SR_250Hz;
+import static com.example.martin.bt_xiaomi.Constants.WBA_MSG_VALUE_READ_TIMEOUT;
+import static com.example.martin.bt_xiaomi.Constants.WRITE_CHAR_TO_STREAM_DELAY_MS;
 
 //client thread to bind the communication channel
 public class ConnectThread extends Thread {
-
-    private static final String CONNECT_TAG = "BT_Connected";
-    private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
     private final BluetoothSocket mmSocket;
     private final BluetoothDevice mmDevice;
@@ -23,13 +27,15 @@ public class ConnectThread extends Thread {
     private static final String TAG = "BT_Accept_thread";
 
     public ConnectThread(BluetoothDevice device, Handler handler) {
-        this.handlerUIThread = handler;
         Log.i(CONNECT_TAG, "Client created");
+
         // Use a temporary object that is later assigned to mmSocket
         // because mmSocket is final.
         BluetoothSocket tmp = null;
-        boolean failed = false;
         mmDevice = device;
+
+        this.handlerUIThread = handler;
+        boolean failed = false;
 
         try {
             // Get a BluetoothSocket to connect with the given BluetoothDevice.
@@ -90,40 +96,23 @@ public class ConnectThread extends Thread {
             } catch (IOException closeException) {
                 Log.i(TAG, "Could not close the client socket", closeException);
             }
-            return;
         }
 
-        // The connection attempt succeeded. Perform work associated with
-        // the connection in a separate thread.
-        //todo create better handler
-        myCommChanel = connectedCommunication(mmSocket);
-        myCommChanel.start();
-        Log.i(TAG, "Starting new communication thread");
-
+        // create communication thread
+        myCommChanel = new CommunicationThread(mmSocket, handlerUIThread);
     }
 
-    // Closes the client socket and causes the thread to finish.
+
+    //use only when closing the app, otherwise channel will be closed
     public void cancel() {
         try {
             mmSocket.close();
         } catch (IOException e) {
             Log.e(TAG, "Could not close the client socket", e);
         }
-
-        if (myCommChanel != null)
-            myCommChanel.close();
     }
 
-    public void sendMessage(String msg){
-        myCommChanel.write(msg);
-    }
-
-    // If one succeeds with the socket connection, now time to manage connection for sending and receiving files in a separate thread.
-    public synchronized CommunicationThread connectedCommunication(BluetoothSocket socket) {
-        Log.i(CONNECT_TAG, "Establishing connection in new thread");
-
-        // Start the thread to manage the connection and perform transmissions
-        CommunicationThread mCommunicationThread = new CommunicationThread(socket, handlerUIThread);
-        return mCommunicationThread;
+    public CommunicationThread getMyCommChanel(){
+        return myCommChanel;
     }
 }

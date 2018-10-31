@@ -27,25 +27,27 @@ import android.widget.Toast;
 
 public class CommunicateActivity extends AppCompatActivity {
 
+
     private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-    BluetoothAdapter mBluetoothAdapter;
+    private BluetoothAdapter mBluetoothAdapter;
     private static final String CONNECT_TAG = "BT_Connected";
 
-    AcceptThread acceptThread;
-    ConnectThread connectThread;
-    Handler handlerUIThread;
+    private CommunicationThread communicationChannel;
+    private AcceptThread acceptThread;
+    private ConnectThread connectThread;
+    private Handler handlerUIThread;
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
 
-        if (acceptThread!=null){
-            acceptThread.cancel();
-        }
+        //stop threads after closing the app
+        killServerClientThreads();
+        closeSockets();
 
-        //stop thread after closing the app
-        if (connectThread != null) {
-            connectThread.cancel();
+        if (communicationChannel != null) {
+            communicationChannel.close();
+            communicationChannel = null;
         }
     }
 
@@ -77,10 +79,8 @@ public class CommunicateActivity extends AppCompatActivity {
             public void onClick(View v) {
                 String msg = msgEdit.getText().toString();
 
-                if (connectThread != null) {
-                    connectThread.sendMessage(msg);
-                } else if (acceptThread != null) {
-                    acceptThread.sendMessage(msg);
+                if (communicationChannel != null) {
+                    communicationChannel.write(msg);
                 } else {
                     Toast.makeText(getApplicationContext(), "Thread not running!", Toast.LENGTH_SHORT).show();
                 }
@@ -103,24 +103,60 @@ public class CommunicateActivity extends AppCompatActivity {
         });
     }
 
-    public synchronized void startServer(BluetoothAdapter adapter, Handler handler){
+    private synchronized void startServer(BluetoothAdapter adapter, Handler handler) {
         Log.i(CONNECT_TAG, "btnServer clicked");
-
-        if (connectThread!=null)
-            connectThread.cancel();
+        killServerClientThreads();
 
         acceptThread = new AcceptThread(adapter, handler);
         acceptThread.run();
+
+        //wait till communication channel is created
+        while (acceptThread.getMyCommChanel() == null) {
+            android.os.SystemClock.sleep(150);
+        }
+
+        if (acceptThread.getMyCommChanel() != null) {
+            //communication thread created
+            communicationChannel = acceptThread.getMyCommChanel();
+            communicationChannel.start();
+            killServerClientThreads();
+        }
     }
 
-    public synchronized void startClient(BluetoothDevice connectedDev, Handler handler) {
+    private synchronized void startClient(BluetoothDevice connectedDev, Handler handler) {
         Log.i(CONNECT_TAG, "btnClient clicked");
-
-        if (connectThread != null)
-            connectThread.cancel();
+        killServerClientThreads();
 
         connectThread = new ConnectThread(connectedDev, handler);
         connectThread.run();
+
+        //wait till communication channel is created
+        while (connectThread.getMyCommChanel() == null) {
+            android.os.SystemClock.sleep(100);
+        }
+
+        if (connectThread.getMyCommChanel() != null) {
+            //communication thread created
+            communicationChannel = connectThread.getMyCommChanel();
+            communicationChannel.start();
+            killServerClientThreads();
+        }
+    }
+
+    public void killServerClientThreads(){
+        if (connectThread != null)
+            connectThread = null;
+
+        if (acceptThread != null)
+            acceptThread = null;
+    }
+
+    public void closeSockets(){
+        if (connectThread != null)
+            connectThread.cancel();
+
+        if (acceptThread != null)
+            acceptThread.cancel();
     }
 
 }

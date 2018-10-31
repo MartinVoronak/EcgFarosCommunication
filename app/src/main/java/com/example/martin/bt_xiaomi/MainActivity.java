@@ -22,20 +22,20 @@ import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
 
-    BluetoothAdapter bluetoothAdapter;
-    Set<BluetoothDevice> pairedDevices;
-    ArrayList<BluetoothDevice> myBtDevices = new ArrayList<>();
-    ArrayList<BluetoothDevice> discoverdBleDevices = new ArrayList<>();
+    private BluetoothAdapter bluetoothAdapter;
+    private Set<BluetoothDevice> pairedDevices;
+    private ArrayList<BluetoothDevice> myBtDevices = new ArrayList<>();
+    private ArrayList<BluetoothDevice> discoverdBleDevices = new ArrayList<>();
 
-    ArrayAdapter<BluetoothDevice> discoveredAdapter;
-    ArrayAdapter<BluetoothDevice> pairedAdapter;
-    ListView listViewDiscovered;
-    ListView listViewPaired;
-    Button buttonScan, buttonRefresh;
-    ProgressDialog progressScanDevices;
-    ProgressDialog progressPairDevice;
+    private ArrayAdapter<BluetoothDevice> discoveredAdapter;
+    private ArrayAdapter<BluetoothDevice> pairedAdapter;
+    private ListView listViewDiscovered;
+    private ListView listViewPaired;
+    private Button buttonScan, buttonRefresh;
+    private ProgressDialog progressScanDevices;
+    private ProgressDialog progressPairDevice;
 
-    BluetoothDevice myBtDevice;
+    private BluetoothDevice myBtDevice;
     private final String TAG = "BT_device";
 
     @Override
@@ -133,7 +133,6 @@ public class MainActivity extends AppCompatActivity {
                 Log.i(TAG, "bt info: " + device.getName() + "  add: " + device.getAddress() + "  state: " + device.getBondState());
             }
         }
-
         pairedAdapter.notifyDataSetChanged();
     }
 
@@ -192,11 +191,5 @@ public class MainActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
-
-
     }
-
-
-
-
 }
