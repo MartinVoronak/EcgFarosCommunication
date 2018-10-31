@@ -7,14 +7,9 @@ import android.os.Handler;
 import android.util.Log;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.util.UUID;
 
-import static com.example.martin.bt_xiaomi.Constants.CONNECT_TAG;
+import static com.example.martin.bt_xiaomi.Constants.TAG_CONNECT;
 import static com.example.martin.bt_xiaomi.Constants.MY_UUID;
-import static com.example.martin.bt_xiaomi.Constants.WBA_COMMAND_SR_250Hz;
-import static com.example.martin.bt_xiaomi.Constants.WBA_MSG_VALUE_READ_TIMEOUT;
-import static com.example.martin.bt_xiaomi.Constants.WRITE_CHAR_TO_STREAM_DELAY_MS;
 
 //client thread to bind the communication channel
 public class ConnectThread extends Thread {
@@ -27,7 +22,7 @@ public class ConnectThread extends Thread {
     private static final String TAG = "BT_Accept_thread";
 
     public ConnectThread(BluetoothDevice device, Handler handler) {
-        Log.i(CONNECT_TAG, "Client created");
+        Log.i(TAG_CONNECT, "Client created");
 
         // Use a temporary object that is later assigned to mmSocket
         // because mmSocket is final.
@@ -41,7 +36,7 @@ public class ConnectThread extends Thread {
             // Get a BluetoothSocket to connect with the given BluetoothDevice.
             // MY_UUID is the app's UUID string, also used in the server code.
             tmp = device.createInsecureRfcommSocketToServiceRecord(MY_UUID);
-            Log.i(CONNECT_TAG, "Client createInsecureRfcommSocketToServiceRecord() with device");
+            Log.i(TAG_CONNECT, "Client createInsecureRfcommSocketToServiceRecord() with device");
         } catch (IOException e) {
             failed = true;
             Log.e(TAG, "Socket's createInsecureRfcommSocketToServiceRecord() method failed", e);
@@ -52,29 +47,29 @@ public class ConnectThread extends Thread {
                 // Get a BluetoothSocket to connect with the given BluetoothDevice.
                 // MY_UUID is the app's UUID string, also used in the server code.
                 tmp = device.createRfcommSocketToServiceRecord(MY_UUID);
-                Log.i(CONNECT_TAG, "Client createRfcommSocketToServiceRecord() with device");
+                Log.i(TAG_CONNECT, "Client createRfcommSocketToServiceRecord() with device");
             } catch (IOException e) {
                 failed = true;
                 Log.e(TAG, "Socket's createRfcommSocketToServiceRecord() method failed", e);
             }
         }
 
-        Log.i(CONNECT_TAG, "Socket created");
+        Log.i(TAG_CONNECT, "Socket created");
         mmSocket = tmp;
     }
 
     public void run() {
-        Log.i(CONNECT_TAG, "Client thread run() called");
+        Log.i(TAG_CONNECT, "Client thread run() called");
 
         BluetoothAdapter btAdapter = null;
         try{
             // Cancel discovery because it otherwise slows down the connection.
             btAdapter = BluetoothAdapter.getDefaultAdapter();
             if (btAdapter.cancelDiscovery()) {
-                Log.d(CONNECT_TAG, "ConnectThread.run() cancelDiscovery OK");
+                Log.d(TAG_CONNECT, "ConnectThread.run() cancelDiscovery OK");
             }
         } catch (Exception btExc) {
-            Log.e(CONNECT_TAG, "ConnectThread.run() cancelDiscovery " + btExc.getMessage());
+            Log.e(TAG_CONNECT, "ConnectThread.run() cancelDiscovery " + btExc.getMessage());
         }
 
         try {
@@ -82,17 +77,17 @@ public class ConnectThread extends Thread {
             // until it succeeds or throws an exception.
             if (btAdapter.isEnabled()){
                 mmSocket.connect();
-                Log.i(CONNECT_TAG, "Client connected to socket");
+                Log.i(TAG_CONNECT, "Client connected to socket");
             }
             else {
                 btAdapter.enable();
-                Log.i(CONNECT_TAG, "BT was not enabled, retrying");
+                Log.i(TAG_CONNECT, "BT was not enabled, retrying");
             }
         } catch (IOException connectException) {
             // Unable to connect; close the socket and return.
             try {
                 mmSocket.close();
-                Log.i(CONNECT_TAG, "Client socket closed");
+                Log.i(TAG_CONNECT, "Client socket closed");
             } catch (IOException closeException) {
                 Log.i(TAG, "Could not close the client socket", closeException);
             }

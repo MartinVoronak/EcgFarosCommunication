@@ -7,9 +7,8 @@ import android.os.Handler;
 import android.util.Log;
 
 import java.io.IOException;
-import java.util.UUID;
 
-import static com.example.martin.bt_xiaomi.Constants.CONNECT_TAG;
+import static com.example.martin.bt_xiaomi.Constants.TAG_CONNECT;
 import static com.example.martin.bt_xiaomi.Constants.MY_UUID;
 
 //server
@@ -27,14 +26,14 @@ public class AcceptThread extends Thread {
         this.handlerUIThread = handler;
         this.mBluetoothAdapter = adapter;
 
-        Log.i(CONNECT_TAG, "Server created");
+        Log.i(TAG_CONNECT, "Server created");
         // Use a temporary object that is later assigned to mmServerSocket
         // because mmServerSocket is final.
         BluetoothServerSocket tmp = null;
         try {
             // MY_UUID is the app's UUID string, also used by the client code.
             tmp = mBluetoothAdapter.listenUsingInsecureRfcommWithServiceRecord("PWAccessP", MY_UUID);
-            Log.i(CONNECT_TAG, "Server initializing communication with paired device");
+            Log.i(TAG_CONNECT, "Server initializing communication with paired device");
         } catch (IOException e) {
             Log.e(TAG, "Socket's listen() method failed", e);
         }
@@ -42,13 +41,13 @@ public class AcceptThread extends Thread {
     }
 
     public void run() {
-        Log.i(CONNECT_TAG, "Starting run thread");
+        Log.i(TAG_CONNECT, "Starting run thread");
         BluetoothSocket socket = null;
         // Keep listening until exception occurs or a socket is returned.
         while (true) {
             try {
                 socket = mmServerSocket.accept();
-                Log.i(CONNECT_TAG, "Socket created");
+                Log.i(TAG_CONNECT, "Socket created");
             } catch (IOException e) {
                 Log.e(TAG, "Socket's accept() method failed", e);
                 break;
@@ -72,7 +71,7 @@ public class AcceptThread extends Thread {
     public void cancel() {
         try {
             mmServerSocket.close();
-            Log.i(CONNECT_TAG, "Server closing socket!");
+            Log.i(TAG_CONNECT, "Server closing socket!");
         } catch (IOException e) {
             Log.e(TAG, "Could not close the connect socket", e);
         }
