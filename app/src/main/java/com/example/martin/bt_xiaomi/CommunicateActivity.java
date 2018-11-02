@@ -31,8 +31,6 @@ import static com.example.martin.bt_xiaomi.Constants.TAG_CONNECT;
 
 public class CommunicateActivity extends AppCompatActivity {
 
-
-    private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private BluetoothAdapter mBluetoothAdapter;
 
     private CommunicationThread communicationChannel;
@@ -64,12 +62,11 @@ public class CommunicateActivity extends AppCompatActivity {
         final BluetoothDevice connectedDev = (BluetoothDevice) getIntent().getParcelableExtra("paired_device");
         Log.i(TAG_CONNECT, "device selected: "+connectedDev.getName()+" "+connectedDev.getAddress());
 
+        // This is where you do your work in the UI thread.
+        // Your worker tells you in the message what to do.
         handlerUIThread = new Handler(Looper.getMainLooper()) {
             @Override
             public void handleMessage(Message message) {
-                // This is where you do your work in the UI thread.
-                // Your worker tells you in the message what to do.
-                //todo read message text
                 if (message.arg1 == 1)
                     Toast.makeText(getApplicationContext(), "Message accepted!", Toast.LENGTH_SHORT).show();
                 else if (message.arg1 == 2)
@@ -77,6 +74,7 @@ public class CommunicateActivity extends AppCompatActivity {
             }
         };
 
+        //todo delete cusom message send, no need for that
         final EditText msgEdit = (EditText) findViewById(R.id.msgEdit);
         Button btnSend = (Button) findViewById(R.id.btnSend);
         btnSend.setOnClickListener(new View.OnClickListener() {
@@ -106,6 +104,7 @@ public class CommunicateActivity extends AppCompatActivity {
             }
         });
 
+        //start measure
         Button btnMeasure = (Button) findViewById(R.id.btnMeasure);
         btnMeasure.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -122,10 +121,29 @@ public class CommunicateActivity extends AppCompatActivity {
                 }
             }
         });
+
+        //get what version is used
+        Button btnVersion = (Button) findViewById(R.id.btnVersion);
+        btnVersion.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+
+                if (communicationChannel != null){
+                    try {
+                        communicationChannel.getFwVerson();
+                    } catch (IOException e) {
+                        Log.i(TAG_COMMUNICATION, "Unable to get version from Faros device");
+                        e.printStackTrace();
+                    }
+                } else {
+                    Toast.makeText(getApplicationContext(), "Communication not running!", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
     }
 
     private synchronized void startServer(BluetoothAdapter adapter, Handler handler) {
         Log.i(TAG_CONNECT, "btnServer clicked");
+        //restart if running
         killServerClientThreads();
 
         acceptThread = new AcceptThread(adapter, handler);
@@ -146,6 +164,7 @@ public class CommunicateActivity extends AppCompatActivity {
 
     private synchronized void startClient(BluetoothDevice connectedDev, Handler handler) {
         Log.i(TAG_CONNECT, "btnClient clicked");
+        //restart if running
         killServerClientThreads();
 
         connectThread = new ConnectThread(connectedDev, handler);
@@ -164,6 +183,7 @@ public class CommunicateActivity extends AppCompatActivity {
         }
     }
 
+    //close threads so it wont drain our cpu/battery
     public void killServerClientThreads(){
         if (connectThread != null)
             connectThread = null;
@@ -172,6 +192,7 @@ public class CommunicateActivity extends AppCompatActivity {
             acceptThread = null;
     }
 
+    //end communication
     public void closeSockets(){
         if (connectThread != null)
             connectThread.cancel();

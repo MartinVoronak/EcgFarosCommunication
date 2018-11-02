@@ -9,12 +9,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import static com.example.martin.bt_xiaomi.Constants.AW_PROTOCOL_CODE_V_0_5;
+import static com.example.martin.bt_xiaomi.Constants.AW_PROTOCOL_CODE_V_0_6;
+import static com.example.martin.bt_xiaomi.Constants.AW_PROTOCOL_CODE_V_0_8;
 import static com.example.martin.bt_xiaomi.Constants.NONIN_COMMAND_START_DATAFORMAT_13;
 import static com.example.martin.bt_xiaomi.Constants.TAG_COMMUNICATION;
+import static com.example.martin.bt_xiaomi.Constants.WBA_COMMAND_FW_VERSION;
 import static com.example.martin.bt_xiaomi.Constants.WBA_COMMAND_SR_250Hz;
 import static com.example.martin.bt_xiaomi.Constants.WBA_COMMAND_START;
 import static com.example.martin.bt_xiaomi.Constants.WBA_COMMAND_START_V6_ACK;
 import static com.example.martin.bt_xiaomi.Constants.WBA_MSG_VALUE_READ_TIMEOUT;
+import static com.example.martin.bt_xiaomi.Constants.WBA_V5_PACKET_HEADER_SIZE;
 import static com.example.martin.bt_xiaomi.Constants.WRITE_CHAR_TO_STREAM_DELAY_MS;
 
 /*
@@ -24,8 +29,11 @@ import static com.example.martin.bt_xiaomi.Constants.WRITE_CHAR_TO_STREAM_DELAY_
 public class CommunicationThread extends Thread {
 
     private BluetoothSocket mmSocket = null;
+
+    //input gets data from device, outpit writes commands for device
     private InputStream mmInStream = null;
     private OutputStream mmOutStream = null;
+
     private byte[] mmBuffer; // mmBuffer store for the stream
 
     private Handler handlerUIThread; // handler that gets info from Bluetooth service
@@ -55,11 +63,13 @@ public class CommunicationThread extends Thread {
     public void run() {
         Log.i(TAG_COMMUNICATION, "Method run called");
 
+        /*
         // Keep listening to the InputStream until an exception occurs.
         while (true) {
             //todo maybe remove this reading
             // and adapt to the mangoko message read
 
+            /*
             mmBuffer = new byte[1024];
             int numBytes;
 
@@ -81,6 +91,7 @@ public class CommunicationThread extends Thread {
                 break;
             }
         }
+        */
     }
 
     public void write(String message) {
@@ -106,6 +117,10 @@ public class CommunicationThread extends Thread {
         }
     }
 
+    //------------------------------------------ starting measurment ----------------------------------------------------//
+
+    //after this device will be sending data
+    //todo catch them in while loop, for now we dont want to receive starting response twice --> commented run() method
     public void startMeasurement() throws IOException {
         writeSamplingRateCommand();
         try {
@@ -127,14 +142,15 @@ public class CommunicationThread extends Thread {
     }
 
     private void writeSamplingRateCommand() {
-        //todo for now we use all default values of variables
+        //for now we use all default values of variables
 
         String strCommand = WBA_COMMAND_SR_250Hz;
         byte[] command = strCommand.getBytes();
+        Log.i(TAG_COMMUNICATION, "Sending: "+strCommand);
         Log.i(TAG_COMMUNICATION, "Command length: " + command.length);
 
         for (int i = 0; i < command.length; i += WBA_MSG_VALUE_READ_TIMEOUT) {
-            Log.i(TAG_COMMUNICATION, "Command chars: " + command[i]);
+            Log.i(TAG_COMMUNICATION, "Command chars: " + (char) command[i] + " -- value: "+command[i]);
 
             try {
                 mmOutStream.write(command[i]);
@@ -155,10 +171,10 @@ public class CommunicationThread extends Thread {
     private void writeStartCommand(String a_startCommand) throws IOException {
         byte[] command = a_startCommand.getBytes();
         Log.i(TAG_COMMUNICATION, "Command length: " + command.length);
-        Log.i(TAG_COMMUNICATION, "Sending Start-command...");
+        Log.i(TAG_COMMUNICATION, "Sending Start-command: "+a_startCommand);
 
         for (int i = 0; i < command.length; i += WBA_MSG_VALUE_READ_TIMEOUT) {
-            Log.i(TAG_COMMUNICATION, "Command chars: " + command[i]);
+            Log.i(TAG_COMMUNICATION, "Command chars: " + (char) command[i] + " -- value: "+command[i]);
             this.mmOutStream.write(command[i]);
             try {
                 Thread.sleep(WRITE_CHAR_TO_STREAM_DELAY_MS);
@@ -194,8 +210,78 @@ public class CommunicationThread extends Thread {
         Message msg2 = handlerUIThread.obtainMessage(Constants.MESSAGE_READ, 2, 1, (Object) answerFromWBA);
         msg2.sendToTarget();
 
+        //do we have ACK from device?
         if (answerFromWBA.contains(expextedResponse) || answerFromWBA.contains("w")) {
             Log.i(TAG_COMMUNICATION, "Answer OK, we can start listening for data");
         }
+    }
+
+    //------------------------------------------ getting firmware version ----------------------------------------------------//
+
+    public void getFwVerson() throws IOException {
+        writeFwVersionCommand();
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+        }
+
+        readVersionResponse();
+    }
+
+    private void writeFwVersionCommand() throws IOException {
+        byte[] command = WBA_COMMAND_FW_VERSION.getBytes();
+        Log.d(TAG_COMMUNICATION, "Sending fwVersion-comman: "+WBA_COMMAND_FW_VERSION);
+        for (int i = 0; i < command.length; i += WBA_MSG_VALUE_READ_TIMEOUT) {
+            this.mmOutStream.write(command[i]);
+            try {
+                Thread.sleep(WRITE_CHAR_TO_STREAM_DELAY_MS);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void readVersionResponse() throws IOException {
+        byte[] answerByteData = new byte[WBA_V5_PACKET_HEADER_SIZE];
+        Log.d(TAG_COMMUNICATION, "Read FW version response...");
+
+        int bytesRead = this.mmInStream.read(answerByteData, 0, WBA_V5_PACKET_HEADER_SIZE);
+        Log.d(TAG_COMMUNICATION, "Bytes read: " + bytesRead);
+        String answerFromWBA = "";
+
+        for (int j = 0; j < bytesRead; j += WBA_MSG_VALUE_READ_TIMEOUT) {
+            if (j < answerByteData.length) {
+                if (answerByteData[j] != NONIN_COMMAND_START_DATAFORMAT_13) {
+                    answerFromWBA = new StringBuilder(String.valueOf(answerFromWBA)).append((char) answerByteData[j]).toString();
+                } else {
+                    answerFromWBA = new StringBuilder(String.valueOf(answerFromWBA)).append("\\r").toString();
+                }
+            }
+        }
+        Log.d(TAG_COMMUNICATION, "Answer: " + answerFromWBA);
+
+        String protocolVersion = "";
+        if (answerFromWBA.length() <= 7) {
+            Log.e(TAG_COMMUNICATION, "Response to wbainf request too short");
+            Log.d(TAG_COMMUNICATION, "Still try to start AATOS-WBA protocol v0.6");
+            protocolVersion = "v0.6";
+        } else if (answerFromWBA.contains(AW_PROTOCOL_CODE_V_0_8)) {
+            Log.d(TAG_COMMUNICATION, "AATOS-WBA protocol v0.8");
+            protocolVersion = "v0.8";
+        } else if (answerFromWBA.contains(AW_PROTOCOL_CODE_V_0_6)) {
+            Log.d(TAG_COMMUNICATION, "AATOS-WBA protocol v0.6");
+            protocolVersion = "v0.6";
+        } else if (answerFromWBA.contains(AW_PROTOCOL_CODE_V_0_5)) {
+            Log.d(TAG_COMMUNICATION, "AATOS-WBA protocol v0.5");
+            protocolVersion = "v0.5";
+        } else {
+            //we get this response but seems like it shouldnt bother us, we use v0.6 as default and start listening
+            Log.e(TAG_COMMUNICATION, "Invalid response to wbainf request");
+            Log.d(TAG_COMMUNICATION, "Still try to start AATOS-WBA protocol v0.6");
+            protocolVersion = "v0.6";
+        }
+        Log.i(TAG_COMMUNICATION, "Protocol version: "+protocolVersion);
+        Message msg2 = handlerUIThread.obtainMessage(Constants.MESSAGE_READ, 2, 1, (Object) protocolVersion);
+        msg2.sendToTarget();
     }
 }
