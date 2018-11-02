@@ -3,6 +3,11 @@
 ###### last changes:
 - Server / Client / Communication threads separated  
 - fix socket connection failure
+- Close redundant threads after opening socket
+- Send first command
+
+###### todos:
+- Start measure command before closing Client thread and listen in new thread 
 
 ###### functions:
 - [x] list paired device
