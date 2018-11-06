@@ -1,20 +1,12 @@
 package com.example.martin.bt_xiaomi;
 
-import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothServerSocket;
-import android.bluetooth.BluetoothSocket;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.UUID;
 
 import android.bluetooth.BluetoothDevice;
 import android.support.v7.app.AppCompatActivity;
@@ -23,7 +15,6 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import static com.example.martin.bt_xiaomi.Constants.TAG_COMMUNICATION;
@@ -34,8 +25,8 @@ public class CommunicateActivity extends AppCompatActivity {
     private BluetoothAdapter mBluetoothAdapter;
 
     private CommunicationThread communicationChannel;
-    private AcceptThread acceptThread;
-    private ConnectThread connectThread;
+    private AcceptThread serverThread;
+    private ConnectThread clientThread;
     private Handler handlerUIThread;
 
     @Override
@@ -112,10 +103,27 @@ public class CommunicateActivity extends AppCompatActivity {
                 if (communicationChannel != null){
                     try {
                         communicationChannel.startMeasurement();
+
+                        // todo maybe we will need to create a small delay for reading after measure command
+                        communicationChannel.setRead(true);
                     } catch (IOException e) {
                         Log.i(TAG_COMMUNICATION, "Unable to communicate with Faros device");
                         e.printStackTrace();
                     }
+                } else {
+                    Toast.makeText(getApplicationContext(), "Communication not running!", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
+        //stop measure
+        Button btnStop = (Button) findViewById(R.id.btnStop);
+        btnStop.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+
+                if (communicationChannel != null){
+                    communicationChannel.setRead(false);
+                    // todo send stop measurment command for device
                 } else {
                     Toast.makeText(getApplicationContext(), "Communication not running!", Toast.LENGTH_SHORT).show();
                 }
@@ -146,17 +154,18 @@ public class CommunicateActivity extends AppCompatActivity {
         //restart if running
         killServerClientThreads();
 
-        acceptThread = new AcceptThread(adapter, handler);
-        acceptThread.run();
+        serverThread = new AcceptThread(adapter, handler);
+        serverThread.run();
 
         //wait till communication channel is created
-        while (acceptThread.getMyCommChanel() == null) {
+        while (serverThread.getMyCommChanel() == null) {
             android.os.SystemClock.sleep(100);
         }
 
-        if (acceptThread.getMyCommChanel() != null) {
+        if (serverThread.getMyCommChanel() != null) {
             //communication thread created
-            communicationChannel = acceptThread.getMyCommChanel();
+            communicationChannel = serverThread.getMyCommChanel();
+            communicationChannel.setRead(true);
             communicationChannel.start();
             killServerClientThreads();
         }
@@ -167,17 +176,17 @@ public class CommunicateActivity extends AppCompatActivity {
         //restart if running
         killServerClientThreads();
 
-        connectThread = new ConnectThread(connectedDev, handler);
-        connectThread.run();
+        clientThread = new ConnectThread(connectedDev, handler);
+        clientThread.run();
 
         //wait till communication channel is created
-        while (connectThread.getMyCommChanel() == null) {
+        while (clientThread.getMyCommChanel() == null) {
             android.os.SystemClock.sleep(100);
         }
 
-        if (connectThread.getMyCommChanel() != null) {
+        if (clientThread.getMyCommChanel() != null) {
             //communication thread created
-            communicationChannel = connectThread.getMyCommChanel();
+            communicationChannel = clientThread.getMyCommChanel();
             communicationChannel.start();
             killServerClientThreads();
         }
@@ -185,20 +194,20 @@ public class CommunicateActivity extends AppCompatActivity {
 
     //close threads so it wont drain our cpu/battery
     public void killServerClientThreads(){
-        if (connectThread != null)
-            connectThread = null;
+        if (clientThread != null)
+            clientThread = null;
 
-        if (acceptThread != null)
-            acceptThread = null;
+        if (serverThread != null)
+            serverThread = null;
     }
 
     //end communication
     public void closeSockets(){
-        if (connectThread != null)
-            connectThread.cancel();
+        if (clientThread != null)
+            clientThread.cancel();
 
-        if (acceptThread != null)
-            acceptThread.cancel();
+        if (serverThread != null)
+            serverThread.cancel();
     }
 
 }

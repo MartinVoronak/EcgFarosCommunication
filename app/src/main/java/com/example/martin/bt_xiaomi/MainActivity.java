@@ -46,7 +46,6 @@ public class MainActivity extends AppCompatActivity {
         setup();
         showPaired();
 
-        //todo listener for buttons (switch)
         //scan devices
         buttonScan.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {

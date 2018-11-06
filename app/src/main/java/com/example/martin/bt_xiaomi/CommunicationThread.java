@@ -33,10 +33,10 @@ public class CommunicationThread extends Thread {
     //input gets data from device, outpit writes commands for device
     private InputStream mmInStream = null;
     private OutputStream mmOutStream = null;
-
     private byte[] mmBuffer; // mmBuffer store for the stream
-
     private Handler handlerUIThread; // handler that gets info from Bluetooth service
+
+    private boolean read = false;
 
     public CommunicationThread(BluetoothSocket socket, Handler handler) {
         this.handlerUIThread = handler;
@@ -63,35 +63,33 @@ public class CommunicationThread extends Thread {
     public void run() {
         Log.i(TAG_COMMUNICATION, "Method run called");
 
-        /*
         // Keep listening to the InputStream until an exception occurs.
         while (true) {
-            //todo maybe remove this reading
-            // and adapt to the mangoko message read
+            if (read){
+                // todo CHANGE HOW WE READ THIS DATA
+                mmBuffer = new byte[1024];
+                int numBytes;
 
-            /*
-            mmBuffer = new byte[1024];
-            int numBytes;
+                // receiving message
+                try {
+                    // Read from the InputStream
+                    numBytes = mmInStream.read(mmBuffer);
+                    Log.i(TAG_COMMUNICATION, "received bytes: "+numBytes);
 
-            // receiving message
-            try {
-                // Read from the InputStream
-                numBytes = mmInStream.read(mmBuffer);
-                Log.i(TAG_COMMUNICATION, "received bytes: "+numBytes);
+                    String converted = new String(mmBuffer);
+                    Log.i(TAG_COMMUNICATION, "msg converted: "+converted);
 
-                //String converted = new String(mmBuffer) + "\0";
-                String converted = new String(mmBuffer);
-                Log.i(TAG_COMMUNICATION, "msg converted: "+converted);
-                Message msg2 = handlerUIThread.obtainMessage(Constants.MESSAGE_READ, 2, 1, (Object)converted);
-                msg2.sendToTarget();
+                    // tell it UI
+                    Message msg2 = handlerUIThread.obtainMessage(Constants.MESSAGE_READ, 2, 1, (Object)converted);
+                    msg2.sendToTarget();
 
-            } catch (IOException e) {
-                // connection was lost and start your connection again
-                Log.i(TAG_COMMUNICATION, "Input stream was disconnected", e);
-                break;
+                } catch (IOException e) {
+                    // connection was lost and start your connection again
+                    Log.i(TAG_COMMUNICATION, "Input stream was disconnected", e);
+                    break;
+                }
             }
         }
-        */
     }
 
     public void write(String message) {
@@ -115,6 +113,10 @@ public class CommunicationThread extends Thread {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void setRead(boolean value){
+        read = value;
     }
 
     //------------------------------------------ starting measurment ----------------------------------------------------//
